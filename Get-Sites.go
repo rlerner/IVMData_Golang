@@ -10,15 +10,15 @@ import (
 	"os"
 )
 
-func basicAuth(username, password string) string {
+func basicAuth(username, password string) string { //function to base64 the user:pass string
 	auth := username + ":" + password
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
 func main() {
-	userPtr := flag.String("user", "na", "HTTP Basic Auth USER")
-	passPtr := flag.String("pass", "na", "HTTP Basic Auth PASS")
-	hostPtr := flag.String("host", "na", "HOST+URL to request")
+	userPtr := flag.String("user", "na", "HTTP Basic Auth USER") //Declare variables
+	passPtr := flag.String("pass", "na", "HTTP Basic Auth PASS") //Declare variables
+	hostPtr := flag.String("host", "na", "HOST+URL to request") //Declare variables
 	flag.Parse()
 
 	var input string
@@ -41,13 +41,13 @@ func main() {
 		host = input
 	}
 
-	fmt.Println("Let's get this thang going")
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	fmt.Println("Let's Begin!")
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //Ignore TLS configuration, as most IVM installs use a Self-signed cert
 
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", host, nil)
-	req.Header.Set("Authorization", "Basic "+basicAuth(user, pass))
-	resp, err := client.Do(req)
+	client := &http.Client{} //Create the client to pass basicauth headers
+	req, err := http.NewRequest("GET", host, nil) //Get Request
+	req.Header.Set("Authorization", "Basic "+basicAuth(user, pass)) //set headers for basicauth using function from before
+	resp, err := client.Do(req) //execute GET
 
 	if err != nil {
 		fmt.Println(err)
@@ -73,7 +73,7 @@ func main() {
 					defer file.Close()
 				}
 			} else {
-				fmt.Println("we stopped")
+				fmt.Println("You've stopped the program from replacing sites.json, aborting")
 			}
 
 		}
