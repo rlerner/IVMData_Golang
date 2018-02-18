@@ -1,24 +1,42 @@
 package main
 
 import (
-	"crypto/tls"
+	"fmt"
+	"net/http"
 	"encoding/base64"
 	"flag"
-	"fmt"
-	"io"
-	"net/http"
 	"os"
+	"io"
 )
 
-func basicAuth(username, password string) string { //function to base64 the user:pass string
-	auth := username + ":" + password
-	return base64.StdEncoding.EncodeToString([]byte(auth))
+func jsonToDisk(hostName string, userName string, password string, fileOutput string) {
+	client := &http.Client{}
+	req, requestError := http.NewRequest("GET",hostName,nil)
+	req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(userName+":"+password)))
+	resp, responseError := client.Do(req)
+	
+	if requestError != nil {
+		fmt.Println("Cannot GET " + hostName + " %s\n",requestError)
+	} else {
+		if (responseError != nil) {
+			fmt.Println("Error with response %s\n",responseError)
+		}
+
+		file, fileError := os.Create(fileOutput)
+		if fileError != nil {
+			fmt.Printf("Cannot create file for "+fileOutput+" %s\n", fileError)
+		} else {
+			io.Copy(file, resp.Body)
+			defer file.Close()
+		}
+	}
+	defer resp.Body.Close()
 }
 
 func main() {
-	userPtr := flag.String("user", "na", "HTTP Basic Auth USER") //Declare variables
-	passPtr := flag.String("pass", "na", "HTTP Basic Auth PASS") //Declare variables
-	hostPtr := flag.String("host", "na", "HOST+URL to request") //Declare variables
+	userPtr := flag.String("user","na","HTTP Basic Auth USER")
+	passPtr := flag.String("pass","na","HTTP Basic Auth PASS")
+	hostPtr := flag.String("host","na","HOST+URL to request")
 	flag.Parse()
 
 	var input string
@@ -41,43 +59,5 @@ func main() {
 		host = input
 	}
 
-	fmt.Println("Let's Begin!")
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //Ignore TLS configuration, as most IVM installs use a Self-signed cert
-
-	client := &http.Client{} //Create the client to pass basicauth headers
-	req, err := http.NewRequest("GET", host, nil) //Get Request
-	req.Header.Set("Authorization", "Basic "+basicAuth(user, pass)) //set headers for basicauth using function from before
-	resp, err := client.Do(req) //execute GET
-
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		if _, err := os.Stat("sites.json"); os.IsNotExist(err) {
-			file, err := os.Create("sites.json")
-			if err != nil {
-				fmt.Printf("Cannot create file for sites.json %s\n", err)
-			} else {
-				io.Copy(file, resp.Body)
-				defer file.Close()
-			}
-		} else {
-			var answer string
-			fmt.Print("This file currently exists, do you wish to overwrite (y/N)?")
-			fmt.Scanln(&answer)
-			if answer == "y" || answer == "Y" {
-				file, err := os.Create("sites.json")
-				if err != nil {
-					fmt.Printf("Cannot create file for sites.json %s\n", err)
-				} else {
-					io.Copy(file, resp.Body)
-					defer file.Close()
-				}
-			} else {
-				fmt.Println("You've stopped the program from replacing sites.json, aborting")
-			}
-
-		}
-
-	}
-	defer resp.Body.Close()
+	jsonToDisk(host,user,pass,"sites.json")
 }
