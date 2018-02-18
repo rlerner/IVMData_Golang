@@ -7,6 +7,7 @@ import (
 	"flag"
 	"os"
 	"io"
+	"strings"
 )
 
 func jsonToDisk(hostName string, userName string, password string, fileOutput string) {
@@ -59,5 +60,20 @@ func main() {
 		host = input
 	}
 
-	jsonToDisk(host,user,pass,"sites.json")
+
+	var endPoints[8]string
+	endPoints[0] = "asset_groups"
+	endPoints[1] = "users"
+	endPoints[2] = "tags"
+	endPoints[3] = "administration/info"
+	endPoints[4] = "administration/license"
+	endPoints[5] = "scan_engines"
+	endPoints[6] = "report_templates"
+	endPoints[7] = "discovery_connections"
+
+	for i := 0; i < len(endPoints); i++ {
+		jsonToDisk(host+endPoints[i],user,pass,strings.Replace(endPoints[i],"/","-",-1)+".json")
+	}
+	
+	fmt.Println("end")
 }
